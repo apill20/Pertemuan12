@@ -30,6 +30,9 @@ Penambahan fitur hapus massal (*bulk delete*) menggunakan *checkbox* untuk mempe
 **Bukti Hasil Bulk Delete:**
 ![Tampilan Select All Checkbox](ss/p12/popup.png)
 
+**Hasil Delete Berhasil:**
+![Tampilan Select All Checkbox](ss/p12/delete.png)
+
 ---
 
 ## Tugas 3: Export Buku ke CSV (35%)

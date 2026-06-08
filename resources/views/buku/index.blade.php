@@ -9,12 +9,12 @@
         Daftar Buku
     </h1>
     <div>
+        <a href="{{ route('buku.create')}}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Tambah Buku
+        </a>
+
         <a href="{{ route('buku.export') }}" class="btn btn-success me-2">
             <i class="bi bi-download"></i> Export CSV
-        </a>
-        
-        <a href="{{ route('buku.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Tambah Buku
         </a>
     </div>
 </div>
@@ -122,36 +122,88 @@
 <form action="{{ route('buku.bulk-delete') }}" method="POST" id="form-bulk-delete">
     @csrf
 
-    {{-- Toolbar Bulk Delete (Select All & Tombol Hapus) --}}
+    {{-- Toolbar Bulk Delete --}}
     @if($bukus->count() > 0)
-    <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded shadow-sm border">
-        <div class="form-check mb-0">
-            <input class="form-check-input" type="checkbox" id="select-all" style="transform: scale(1.2); cursor: pointer;">
-            <label class="form-check-label fw-bold ms-2" for="select-all" style="cursor: pointer;">
-                Pilih Semua Buku
+    <div class="d-flex align-items-center mb-3">
+        <div class="form-check me-3 mb-0">
+            <input class="form-check-input" type="checkbox" id="select-all" style="cursor: pointer;">
+            <label class="form-check-label fw-bold" for="select-all" style="cursor: pointer;">
+                Pilih Semua
             </label>
         </div>
-        <button type="button" class="btn btn-danger" id="btn-hapus-massal">
-            <i class="bi bi-trash"></i> Hapus yang Dipilih
+        <button type="button" class="btn btn-danger btn-sm" id="btn-hapus-massal">
+            <i class="bi bi-trash"></i> Hapus Terpilih
         </button>
     </div>
     @endif
 
-    {{-- GRID BUKU --}}
-    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4 mb-5">
+    {{-- LIST BUKU MEMANJANG --}}
+    <div class="d-flex flex-column gap-3 mb-5">
         @forelse($bukus as $buku)
-            <div class="col position-relative">
-                
-                {{-- Checkbox Individual (Ditaruh di pojok kanan atas Card) --}}
-                <div class="position-absolute" style="top: 15px; right: 25px; z-index: 10;">
-                    <input type="checkbox" name="buku_ids[]" value="{{ $buku->id }}" class="form-check-input buku-checkbox shadow" style="transform: scale(1.5); cursor: pointer;">
-                </div>
+            <div class="card border border-light shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        
+                        {{-- Kiri: Checkbox, Ikon, & Kategori --}}
+                        <div class="col-md-2 text-center border-end">
+                            <div class="text-start mb-2">
+                                <input type="checkbox" name="buku_ids[]" value="{{ $buku->id }}" class="form-check-input buku-checkbox" style="cursor: pointer;">
+                                <label class="form-check-label text-muted" style="font-size: 0.8rem;">Pilih</label>
+                            </div>
+                            <i class="bi bi-book text-primary" style="font-size: 3.5rem;"></i>
+                            <div class="mt-2">
+                                <span class="badge bg-primary rounded-pill px-3">{{ $buku->kategori }}</span>
+                            </div>
+                        </div>
 
-                {{-- Memanggil komponen card buku --}}
-                <x-buku-card :buku="$buku" :showActions="true" />
+                        {{-- Tengah: Info Buku --}}
+                        <div class="col-md-7 ps-4">
+                            <h5 class="text-primary fw-bold mb-1">{{ $buku->judul }}</h5>
+                            <div class="text-muted mb-2" style="font-size: 0.85rem;">
+                                <i class="bi bi-person"></i> {{ $buku->pengarang }} | 
+                                <i class="bi bi-building"></i> {{ $buku->penerbit }} | 
+                                <i class="bi bi-calendar"></i> {{ $buku->tahun_terbit }}
+                            </div>
+                            <div class="text-muted mb-3" style="font-size: 0.85rem;">
+                                <i class="bi bi-upc-scan"></i> ISBN: {{ $buku->isbn ?? '-' }}
+                            </div>
+                            <p class="mb-0 text-secondary" style="font-size: 0.9rem;">
+                                {{ Str::limit($buku->deskripsi ?? 'Tidak ada deskripsi.', 100) }}
+                            </p>
+                        </div>
+
+                        {{-- Kanan: Harga, Stok, & Tombol Aksi --}}
+                        <div class="col-md-3 border-start text-end">
+                            <h5 class="fw-bold text-primary mb-1">Rp {{ number_format($buku->harga, 0, ',', '.') }}</h5>
+                            <div class="mb-3">
+                                @if($buku->stok > 0)
+                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Tersedia</span>
+                                    <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">Stok: {{ $buku->stok }} buku</small>
+                                @else
+                                    <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Habis</span>
+                                    <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">Stok: 0</small>
+                                @endif
+                            </div>
+                            
+                            {{-- Tombol Detail, Edit, Hapus (Berjejer ke bawah) --}}
+                            <div class="d-grid gap-2">
+                                <a href="{{ route('buku.show', $buku->id) }}" class="btn btn-info btn-sm text-white">
+                                    <i class="bi bi-eye"></i> Detail
+                                </a>
+                                <a href="{{ route('buku.edit', $buku->id) }}" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm btn-delete-satuan" data-id="{{ $buku->id }}" data-judul="{{ $buku->judul }}">
+                                    <i class="bi bi-trash"></i> Hapus
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </div>
         @empty
-            <div class="col-12 text-center py-5 w-100">
+            <div class="text-center py-5 w-100">
                 <i class="bi bi-journal-x display-1 text-muted mb-3 d-block"></i>
                 <h5 class="text-muted">Tidak ada buku yang ditemukan.</h5>
             </div>
@@ -181,23 +233,15 @@
         });
     }
 
-    // 2. SweetAlert untuk konfirmasi Hapus Massal (Bulk Delete)
+    // 2. SweetAlert Hapus Massal
     const btnHapusMassal = document.getElementById('btn-hapus-massal');
     if (btnHapusMassal) {
         btnHapusMassal.addEventListener('click', function() {
             const checkedBoxes = document.querySelectorAll('.buku-checkbox:checked');
-            
-            // Cek apakah ada yang dicentang
             if (checkedBoxes.length === 0) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Oops...',
-                    text: 'Silakan pilih minimal satu buku yang ingin dihapus!'
-                });
+                Swal.fire({ icon: 'warning', title: 'Oops...', text: 'Silakan pilih minimal satu buku!' });
                 return;
             }
-
-            // Munculkan konfirmasi
             Swal.fire({
                 title: 'Hapus Massal?',
                 text: `Apakah Anda yakin ingin menghapus ${checkedBoxes.length} buku yang dipilih?`,
@@ -215,11 +259,11 @@
         });
     }
 
-    // 3. SweetAlert untuk Hapus Satuan
-    document.querySelectorAll('.btn-delete').forEach(button => {
+    // 3. SweetAlert Hapus Satuan (Disesuaikan agar tidak bentrok dengan form massal)
+    document.querySelectorAll('.btn-delete-satuan').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-            const form = this.closest('form');
+            const id = this.getAttribute('data-id');
             const judul = this.getAttribute('data-judul');
             
             Swal.fire({
@@ -233,6 +277,12 @@
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    // Membuat form virtual dadakan khusus untuk hapus satuan
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/buku/${id}`;
+                    form.innerHTML = `<input type="hidden" name="_token" value="{{ csrf_token() }}"> <input type="hidden" name="_method" value="DELETE">`;
+                    document.body.appendChild(form);
                     form.submit();
                 }
             });
